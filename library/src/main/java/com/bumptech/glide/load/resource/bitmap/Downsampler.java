@@ -90,6 +90,8 @@ public final class Downsampler {
   public static final Option<Boolean> ALLOW_HARDWARE_CONFIG =
       Option.memory("com.bumtpech.glide.load.resource.bitmap.Downsampler.AllowHardwareDecode");
 
+  public static boolean ignoreEXIF = true;
+
   private static final String WBMP_MIME_TYPE = "image/vnd.wap.wbmp";
   private static final String ICO_MIME_TYPE = "image/x-ico";
   private static final Set<String> NO_DOWNSAMPLE_PRE_N_MIME_TYPES =
@@ -236,7 +238,7 @@ public final class Downsampler {
     }
 
     int orientation = ImageHeaderParserUtils.getOrientation(parsers, is, byteArrayPool);
-    int degreesToRotate = TransformationUtils.getExifOrientationDegrees(orientation);
+    int degreesToRotate = ignoreEXIF ? 0 : TransformationUtils.getExifOrientationDegrees(orientation);
     boolean isExifOrientationRequired = TransformationUtils.isExifOrientationRequired(orientation);
 
     int targetWidth = requestedWidth == Target.SIZE_ORIGINAL ? sourceWidth : requestedWidth;
@@ -343,7 +345,7 @@ public final class Downsampler {
     }
 
     final float exactScaleFactor;
-    if (degreesToRotate == 90 || degreesToRotate == 270) {
+    if ((degreesToRotate == 90 || degreesToRotate == 270) && !ignoreEXIF) {
       // If we're rotating the image +-90 degrees, we need to downsample accordingly so the image
       // width is decreased to near our target's height and the image height is decreased to near
       // our target width.
