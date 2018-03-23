@@ -41,6 +41,8 @@ public final class TransformationUtils {
   private static final Paint CIRCLE_CROP_SHAPE_PAINT = new Paint(CIRCLE_CROP_PAINT_FLAGS);
   private static final Paint CIRCLE_CROP_BITMAP_PAINT;
 
+  public static boolean ignoreEXIF = true;
+
   // See #738.
   private static final Set<String> MODELS_REQUIRING_BITMAP_LOCK =
       new HashSet<>(
@@ -110,7 +112,7 @@ public final class TransformationUtils {
    * Bitmap with the given dimensions is passed in as well.
    *
    * @param pool     The BitmapPool to obtain a bitmap from.
-   * @param inBitmap   The Bitmap to resize.
+   * @param inBitmap The Bitmap to resize.
    * @param width    The width in pixels of the final Bitmap.
    * @param height   The height in pixels of the final Bitmap.
    * @return The resized Bitmap (will be recycled if recycled is not null).
@@ -150,10 +152,10 @@ public final class TransformationUtils {
    * An expensive operation to resize the given Bitmap down so that it fits within the given
    * dimensions maintain the original proportions.
    *
-   * @param pool   The BitmapPool obtain a bitmap from.
-   * @param inBitmap  The Bitmap to shrink.
-   * @param width  The width in pixels the final image will fit within.
-   * @param height The height in pixels the final image will fit within.
+   * @param pool     The BitmapPool obtain a bitmap from.
+   * @param inBitmap The Bitmap to shrink.
+   * @param width    The width in pixels the final image will fit within.
+   * @param height   The height in pixels the final image will fit within.
    * @return A new Bitmap shrunk to fit within the given dimensions, or toFit if toFit's width or
    * height matches the given dimensions and toFit fits within the given dimensions
    */
@@ -211,10 +213,10 @@ public final class TransformationUtils {
    * If the Bitmap is smaller or equal to the Target it returns the original size, if not then
    * {@link #fitCenter(BitmapPool, Bitmap, int, int)} is called instead.
    *
-   * @param pool   The BitmapPool obtain a bitmap from.
-   * @param inBitmap  The Bitmap to center.
-   * @param width  The width in pixels of the target.
-   * @param height The height in pixels of the target.
+   * @param pool     The BitmapPool obtain a bitmap from.
+   * @param inBitmap The Bitmap to center.
+   * @param width    The width in pixels of the target.
+   * @param height   The height in pixels of the target.
    * @return returns input Bitmap if smaller or equal to target, or toFit if the Bitmap's width or
    * height is larger than the given dimensions
    */
@@ -238,9 +240,9 @@ public final class TransformationUtils {
    * transform. This keeps {@link android.graphics.Bitmap#hasAlpha()}} consistent before and after
    * the transformation for transformations that don't add or remove transparent pixels.
    *
-   * @param inBitmap The {@link android.graphics.Bitmap} that will be transformed.
-   * @param outBitmap   The {@link android.graphics.Bitmap} that will be returned from the
-   *                    transformation.
+   * @param inBitmap  The {@link android.graphics.Bitmap} that will be transformed.
+   * @param outBitmap The {@link android.graphics.Bitmap} that will be returned from the
+   *                  transformation.
    */
   public static void setAlpha(Bitmap inBitmap, Bitmap outBitmap) {
     outBitmap.setHasAlpha(inBitmap.hasAlpha());
@@ -279,23 +281,25 @@ public final class TransformationUtils {
    * @return the number of degrees to rotate
    */
   public static int getExifOrientationDegrees(int exifOrientation) {
-    final int degreesToRotate;
-    switch (exifOrientation) {
-      case ExifInterface.ORIENTATION_TRANSPOSE:
-      case ExifInterface.ORIENTATION_ROTATE_90:
-        degreesToRotate = 90;
-        break;
-      case ExifInterface.ORIENTATION_ROTATE_180:
-      case ExifInterface.ORIENTATION_FLIP_VERTICAL:
-        degreesToRotate = 180;
-        break;
-      case ExifInterface.ORIENTATION_TRANSVERSE:
-      case ExifInterface.ORIENTATION_ROTATE_270:
-        degreesToRotate = 270;
-        break;
-      default:
-        degreesToRotate = 0;
-        break;
+    int degreesToRotate = 0;
+    if (!ignoreEXIF) {
+      switch (exifOrientation) {
+        case ExifInterface.ORIENTATION_TRANSPOSE:
+        case ExifInterface.ORIENTATION_ROTATE_90:
+          degreesToRotate = 90;
+          break;
+        case ExifInterface.ORIENTATION_ROTATE_180:
+        case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+          degreesToRotate = 180;
+          break;
+        case ExifInterface.ORIENTATION_TRANSVERSE:
+        case ExifInterface.ORIENTATION_ROTATE_270:
+          degreesToRotate = 270;
+          break;
+        default:
+          degreesToRotate = 0;
+          break;
+      }
     }
     return degreesToRotate;
   }
@@ -311,27 +315,27 @@ public final class TransformationUtils {
    */
   public static Bitmap rotateImageExif(@NonNull BitmapPool pool, @NonNull Bitmap inBitmap,
       int exifOrientation) {
-    if (!isExifOrientationRequired(exifOrientation)) {
-      return inBitmap;
-    }
+    //if (!isExifOrientationRequired(exifOrientation)) {
+    return inBitmap;
+    //}
 
-    final Matrix matrix = new Matrix();
-    initializeMatrixForRotation(exifOrientation, matrix);
-
-    // From Bitmap.createBitmap.
-    final RectF newRect = new RectF(0, 0, inBitmap.getWidth(), inBitmap.getHeight());
-    matrix.mapRect(newRect);
-
-    final int newWidth = Math.round(newRect.width());
-    final int newHeight = Math.round(newRect.height());
-
-    Bitmap.Config config = getNonNullConfig(inBitmap);
-    Bitmap result = pool.get(newWidth, newHeight, config);
-
-    matrix.postTranslate(-newRect.left, -newRect.top);
-
-    applyMatrix(inBitmap, result, matrix);
-    return result;
+//    final Matrix matrix = new Matrix();
+//    initializeMatrixForRotation(exifOrientation, matrix);
+//
+//    // From Bitmap.createBitmap.
+//    final RectF newRect = new RectF(0, 0, inBitmap.getWidth(), inBitmap.getHeight());
+//    matrix.mapRect(newRect);
+//
+//    final int newWidth = Math.round(newRect.width());
+//    final int newHeight = Math.round(newRect.height());
+//
+//    Bitmap.Config config = getNonNullConfig(inBitmap);
+//    Bitmap result = pool.get(newWidth, newHeight, config);
+//
+//    matrix.postTranslate(-newRect.left, -newRect.top);
+//
+//    applyMatrix(inBitmap, result, matrix);
+//    return result;
   }
 
   /**
@@ -357,10 +361,10 @@ public final class TransformationUtils {
    * Crop the image to a circle and resize to the specified width/height.  The circle crop will
    * have the same width and height equal to the min-edge of the result image.
    *
-   * @param pool   The BitmapPool obtain a bitmap from.
+   * @param pool       The BitmapPool obtain a bitmap from.
    * @param inBitmap   The Bitmap to resize.
-   * @param destWidth    The width in pixels of the final Bitmap.
-   * @param destHeight   The height in pixels of the final Bitmap.
+   * @param destWidth  The width in pixels of the final Bitmap.
+   * @param destHeight The height in pixels of the final Bitmap.
    * @return The resized Bitmap (will be recycled if recycled is not null).
    */
   public static Bitmap circleCrop(@NonNull BitmapPool pool, @NonNull Bitmap inBitmap,
@@ -439,15 +443,14 @@ public final class TransformationUtils {
   /**
    * Creates a bitmap from a source bitmap and rounds the corners.
    *
-   * @param inBitmap the source bitmap to use as a basis for the created bitmap.
-   * @param width the width of the generated bitmap.
-   * @param height the height of the generated bitmap.
+   * @param inBitmap       the source bitmap to use as a basis for the created bitmap.
+   * @param width          the width of the generated bitmap.
+   * @param height         the height of the generated bitmap.
    * @param roundingRadius the corner radius to be applied (in device-specific pixels).
    * @return a {@link Bitmap} similar to inBitmap but with rounded corners.
    * @throws IllegalArgumentException if roundingRadius, width or height is 0 or less.
-   *
-   * @deprecated Width and height are unused and ignored. Use
-   * {@link #roundedCorners(BitmapPool, Bitmap, int)} instead.
+   * @deprecated Width and height are unused and ignored. Use {@link #roundedCorners(BitmapPool,
+   * Bitmap, int)} instead.
    */
   @Deprecated
   public static Bitmap roundedCorners(
@@ -467,7 +470,7 @@ public final class TransformationUtils {
    * {@link com.bumptech.glide.request.RequestOptions#transforms(Transformation[])} and/or
    * {@link com.bumptech.glide.load.MultiTransformation}.
    *
-   * @param inBitmap the source bitmap to use as a basis for the created bitmap.
+   * @param inBitmap       the source bitmap to use as a basis for the created bitmap.
    * @param roundingRadius the corner radius to be applied (in device-specific pixels).
    * @return a {@link Bitmap} similar to inBitmap but with rounded corners.
    * @throws IllegalArgumentException if roundingRadius, width or height is 0 or less.

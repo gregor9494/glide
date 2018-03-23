@@ -28,6 +28,6 @@ public class FullscreenActivity extends FragmentActivity {
     ImageView fullscreenView = (ImageView) findViewById(R.id.fullscreen_view);
     Photo photo = getIntent().getParcelableExtra(ARG_PHOTO);
 
-    GlideApp.with(this).load(photo).apply(fitCenterTransform()).into(fullscreenView);
+    GlideApp.with(this).load("https://expertbudowy.pl/xellacompass-srv/api/v1/profile-image/46/public_file?hash=bf972930486979a57ab23c4ccbbdac61").apply(fitCenterTransform()).into(fullscreenView);
   }
 }
